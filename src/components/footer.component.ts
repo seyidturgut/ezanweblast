@@ -22,8 +22,10 @@ import { TranslationService } from '../services/translation.service';
              </div>
              
              <div class="flex flex-col gap-2 text-sm">
-               <a href="#" class="text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-500 transition-colors">{{ ts.t().footer.privacy }}</a>
-               <a href="#" class="text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-500 transition-colors">{{ ts.t().footer.terms }}</a>
+               @if (ts.currentLang() === 'tr') {
+                 <a href="https://ezanvaktipro.com/uygulama-gizlilik-politikasi/" target="_blank" class="text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-500 transition-colors">Gizlilik Politikası</a>
+                 <a href="https://ezanvaktipro.com/kullanim-sartlari/" target="_blank" class="text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-500 transition-colors">Kullanım Şartları</a>
+               }
              </div>
              
              <p class="text-xs text-slate-400">&copy; 2026 Ezan Vakti Pro. {{ ts.t().footer.rights }}</p>
