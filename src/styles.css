@@ -1,0 +1,9 @@
+
+/* Global Styles */
+
+html, body {
+    height: 100%;
+    margin: 0;
+    /* Ensure smooth background transition for theme toggle */
+    transition: background-color 300ms ease-in-out, color 300ms ease-in-out, border-color 300ms ease-in-out;
+}
