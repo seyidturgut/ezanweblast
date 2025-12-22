@@ -65,13 +65,13 @@ export class DeleteAccountComponent {
 
     this.loading.set(true);
 
-    const url = 'https://formsubmit.co/ajax/mobilexsoft@gmail.com';
-    
+    const url = 'https://formsubmit.co/ajax/6d02e0664ab402777d1470c5a9f6443a';
+
     this.http.post(url, {
-        email: this.email(),
-        _subject: 'Hesap Silme Talebi - Ezan Vakti Pro',
-        message: `Kullanıcı ${this.email()} hesabının silinmesini talep etti.`,
-        _captcha: 'false'
+      email: this.email(),
+      _subject: 'Hesap Silme Talebi - Ezan Vakti Pro',
+      message: `Kullanıcı ${this.email()} hesabının silinmesini talep etti.`,
+      _captcha: 'false'
     }).subscribe({
       next: () => {
         this.loading.set(false);
