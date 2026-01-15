@@ -66,9 +66,9 @@ import { TranslationService } from '../services/translation.service';
            <div>
              <h3 class="font-bold text-slate-900 dark:text-white mb-6 text-lg transition-colors">{{ ts.t().footer.contact_title }}</h3>
              <p class="text-sm text-slate-600 dark:text-slate-400 mb-4 transition-colors">{{ ts.t().footer.contact_text }}</p>
-             <a href="mailto:info@ezanvaktipro.com" class="inline-flex items-center gap-2 text-lg font-semibold text-primary-600 dark:text-primary-500 hover:underline transition-colors">
+             <a href="mailto:hello@deen-studios.com" class="inline-flex items-center gap-2 text-lg font-semibold text-primary-600 dark:text-primary-500 hover:underline transition-colors">
                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-               info&#64;ezanvaktipro.com
+               hello&#64;deen-studios.com
              </a>
            </div>
         </div>

@@ -213,7 +213,7 @@ export class TranslationService {
       terms: 'Kullanım Şartları',
       rights: 'Tüm hakları saklıdır.',
       address_title: 'Adres',
-      address_text: '<a href="https://www.deen-studios.com/" target="_blank" class="hover:text-primary-600 dark:hover:text-primary-500 transition-colors font-bold text-lg mb-2 inline-block">Deen studios.</a><br><p class="mb-4 text-xs opacity-80 leading-relaxed text-slate-600 dark:text-slate-400">Deneyimli ve tutkulu Müslüman yazılımcı, tasarımcı ve büyüme uzmanlarından oluşan bir ekibiz. Startuplar ve kurumsal firmalarda uygulamalar geliştirip ölçekleme konusunda 10+ yıllık tecrübeye sahibiz. Finansmanımız, dünyadaki büyük oyun ve tüketici şirketlerini yöneten Müslüman yatırımcılardan geliyor.</p><a href="mailto:hello@deen-studios.com" class="text-primary-600 dark:text-primary-500 hover:underline flex items-center gap-2 text-sm"><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>hello@deen-studios.com</a>',
+      address_text: '<a href="https://www.deen-studios.com/" target="_blank" class="hover:text-primary-600 dark:hover:text-primary-500 transition-colors font-bold text-lg mb-2 inline-block">Deen studios.</a><br><p class="mb-4 text-xs opacity-80 leading-relaxed text-slate-600 dark:text-slate-400">Deneyimli ve tutkulu Müslüman yazılımcı, tasarımcı ve büyüme uzmanlarından oluşan bir ekibiz.</p>',
       contact_title: 'İletişim Bilgileri',
       contact_text: 'Sizden haber almaktan mutluluk duyarız.'
     },
@@ -370,7 +370,7 @@ export class TranslationService {
       terms: 'Terms of Use',
       rights: 'All rights reserved.',
       address_title: 'Address',
-      address_text: '<a href="https://www.deen-studios.com/" target="_blank" class="hover:text-primary-600 dark:hover:text-primary-500 transition-colors font-bold text-lg mb-2 inline-block">Deen studios.</a><br><p class="mb-4 text-xs opacity-80 leading-relaxed text-slate-600 dark:text-slate-400">We are a team of experienced and passionate Muslim developers, designers, and growth experts. We have 10+ years of experience in developing and scaling applications for startups and corporate firms. Our funding comes from Muslim investors who manage major gaming and consumer companies worldwide.</p><a href="mailto:hello@deen-studios.com" class="text-primary-600 dark:text-primary-500 hover:underline flex items-center gap-2 text-sm"><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>hello@deen-studios.com</a>',
+      address_text: '<a href="https://www.deen-studios.com/" target="_blank" class="hover:text-primary-600 dark:hover:text-primary-500 transition-colors font-bold text-lg mb-2 inline-block">Deen studios.</a><br><p class="mb-4 text-xs opacity-80 leading-relaxed text-slate-600 dark:text-slate-400">We are a team of experienced and passionate Muslim developers, designers, and growth experts.</p>',
       contact_title: 'Contact Information',
       contact_text: 'We would love to hear from you.'
     },
@@ -527,7 +527,7 @@ export class TranslationService {
       terms: 'شروط الاستخدام',
       rights: 'جميع الحقوق محفوظة.',
       address_title: 'العنوان',
-      address_text: '<a href="https://www.deen-studios.com/" target="_blank" class="hover:text-primary-600 dark:hover:text-primary-500 transition-colors font-bold text-lg mb-2 inline-block">Deen studios.</a><br><p class="mb-4 text-xs opacity-80 leading-relaxed text-slate-600 dark:text-slate-400">نحن فريق من المطورين والمصممين وخبراء النمو المسلمين ذوي الخبرة والشغف. لدينا أكثر من 10 سنوات من الخبرة في تطوير وتوسيع التطبيقات للشركات الناشئة والشركات الكبرى. يأti تمويلنا من مستثمرين مسلمين يديرون شركات ألعاب واستهلاك كبرى حول العالم.</p><a href="mailto:hello@deen-studios.com" class="text-primary-600 dark:text-primary-500 hover:underline flex items-center gap-2 text-sm"><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>hello@deen-studios.com</a>',
+      address_text: '<a href="https://www.deen-studios.com/" target="_blank" class="hover:text-primary-600 dark:hover:text-primary-500 transition-colors font-bold text-lg mb-2 inline-block">Deen studios.</a><br><p class="mb-4 text-xs opacity-80 leading-relaxed text-slate-600 dark:text-slate-400">نحن فريق من المطورين والمصممين وخبراء النمو المسلمين ذوي الخبرة والشغف.</p>',
       contact_title: 'معلومات الاتصال',
       contact_text: 'نسعد بسماع آرائكم.'
     },
@@ -684,7 +684,7 @@ export class TranslationService {
       terms: 'Nutzungsbedingungen',
       rights: 'Alle Rechte vorbehalten.',
       address_title: 'Adresse',
-      address_text: '<a href="https://www.deen-studios.com/" target="_blank" class="hover:text-primary-600 dark:hover:text-primary-500 transition-colors font-bold text-lg mb-2 inline-block">Deen studios.</a><br><p class="mb-4 text-xs opacity-80 leading-relaxed text-slate-600 dark:text-slate-400">Wir sind ein Team von erfahrenen und leidenschaftlichen muslimischen Entwicklern, Designern und Wachstumsexperten. Wir verfügen über mehr als 10 Jahre Erfahrung in der Entwicklung und Skalierung von Anwendungen für Start-ups und Unternehmen. Unsere Finanzierung stammt von muslimischen Investoren, die weltweit große Gaming- und Konsumgüterunternehmen leiten.</p><a href="mailto:hello@deen-studios.com" class="text-primary-600 dark:text-primary-500 hover:underline flex items-center gap-2 text-sm"><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>hello@deen-studios.com</a>',
+      address_text: '<a href="https://www.deen-studios.com/" target="_blank" class="hover:text-primary-600 dark:hover:text-primary-500 transition-colors font-bold text-lg mb-2 inline-block">Deen studios.</a><br><p class="mb-4 text-xs opacity-80 leading-relaxed text-slate-600 dark:text-slate-400">Wir sind ein Team von erfahrenen und leidenschaftlichen muslimischen Entwicklern, Designern und Wachstumsexperten.</p>',
       contact_title: 'Kontaktinformationen',
       contact_text: 'Wir würden uns freuen, von Ihnen zu hören.'
     },
@@ -841,7 +841,7 @@ export class TranslationService {
       terms: 'Conditions d\'Utilisation',
       rights: 'Tous droits réservés.',
       address_title: 'Adresse',
-      address_text: '<a href="https://www.deen-studios.com/" target="_blank" class="hover:text-primary-600 dark:hover:text-primary-500 transition-colors font-bold text-lg mb-2 inline-block">Deen studios.</a><br><p class="mb-4 text-xs opacity-80 leading-relaxed text-slate-600 dark:text-slate-400">Nous sommes une équipe de développeurs, de designers et d\'experts en croissance musulmans, expérimentés et passionnés. Nous avons plus de 10 ans d\'expérience dans le développement et la mise à l\'échelle d\'applications pour les startups et les entreprises. Notre financement provient d\'investisseurs musulmans qui dirigent de grandes entreprises de jeux et de consommation dans le monde entier.</p><a href="mailto:hello@deen-studios.com" class="text-primary-600 dark:text-primary-500 hover:underline flex items-center gap-2 text-sm"><svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>hello@deen-studios.com</a>',
+      address_text: '<a href="https://www.deen-studios.com/" target="_blank" class="hover:text-primary-600 dark:hover:text-primary-500 transition-colors font-bold text-lg mb-2 inline-block">Deen studios.</a><br><p class="mb-4 text-xs opacity-80 leading-relaxed text-slate-600 dark:text-slate-400">Nous sommes une équipe de développeurs, de designers et d\'experts en croissance musulmans, expérimentés et passionnés.</p>',
       contact_title: 'Informations de Contact',
       contact_text: 'Nous serions ravis d\'avoir de vos nouvelles.'
     },
