@@ -1,7 +1,7 @@
 
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { map, catchError, of, switchMap, tap, Observable, from, firstValueFrom } from 'rxjs';
+import { map, catchError, of, Observable, firstValueFrom } from 'rxjs';
 import { API_CONFIG } from '../config/api.config';
 
 export interface PrayerTime {
@@ -21,11 +21,60 @@ export interface PrayerState {
   source: PrayerSource;
 }
 
+interface AladhanApiResponse {
+  code: number;
+  status: string;
+  data?: {
+    timings?: Record<string, string>;
+  };
+}
+
+interface OpenMeteoSearchResponse {
+  results?: Array<{
+    name: string;
+    country?: string;
+    country_code?: string;
+    latitude: number;
+    longitude: number;
+  }>;
+}
+
+interface GeoPlace {
+  name: string;
+  country?: string;
+  countryCode?: string;
+  lat: number;
+  lng: number;
+}
+
+interface ReverseGeocodeResponse {
+  city?: string;
+  locality?: string;
+  principalSubdivision?: string;
+  countryCode?: string;
+}
+
+interface CalculationConfig {
+  methodId: number;
+  school: 0 | 1;
+  applyTurkeyTakvimAdjustments: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class PrayerTimesService {
   private http = inject(HttpClient);
+  private readonly cacheKey = 'prayer_cache_v3';
+  private readonly diyanetMethodId = 13;
+  private readonly muslimWorldLeagueMethodId = 3;
+  private readonly turkeyTakvimAdjustments = {
+    sunrise: -1,
+    dhuhr: 6,
+    asr: 8,
+    maghrib: 1,
+    isha: 11
+  } as const;
   
   // State signals
   private state = signal<PrayerState>({
@@ -79,32 +128,32 @@ export class PrayerTimesService {
 
   /**
    * Initialization Logic:
-   * 1. Check LocalStorage Cache (valid for 1 hour)
+   * 1. Check LocalStorage Cache (valid for 2 hours)
    * 2. If no cache, Try GPS
    * 3. If GPS denied/fails, Fallback to Default City
    */
   private async init() {
-    // 1. Try Cache
-    if (this.loadFromCache()) {
-      return;
-    }
+    // Load cache for fast first paint, but still try fresh location on startup.
+    const hasCache = this.loadFromCache();
 
-    // 2. Try Geolocation
+    // 1. Try Geolocation
     if ('geolocation' in navigator) {
       try {
         const position = await this.getCurrentPosition();
         const { latitude, longitude } = position.coords;
-        const tzOffset = this.getClientTimezoneOffset();
-        
-        await this.getTimesByGPS(latitude, longitude, tzOffset);
+        await this.getTimesByGPS(latitude, longitude);
+        return;
       } catch (error) {
         console.warn('GPS denied or failed, falling back to city.', error);
-        // 3. Fallback to City
-        this.getTimesByCity(API_CONFIG.defaultCity);
+        // 2. Fallback to default city
+        await this.getTimesByDefaultCity();
+        return;
       }
-    } else {
-      // No Geolocation support
-      this.getTimesByCity(API_CONFIG.defaultCity);
+    }
+
+    // No geolocation support: keep cache if present, otherwise fallback to default city.
+    if (!hasCache) {
+      await this.getTimesByDefaultCity();
     }
   }
 
@@ -120,8 +169,7 @@ export class PrayerTimesService {
       this.state.update(s => ({ ...s, loading: true }));
       const position = await this.getCurrentPosition();
       const { latitude, longitude } = position.coords;
-      const tzOffset = this.getClientTimezoneOffset();
-      await this.getTimesByGPS(latitude, longitude, tzOffset);
+      await this.getTimesByGPS(latitude, longitude);
     } catch (error) {
       this.state.update(s => ({ ...s, loading: false }));
       throw error; // Propagate error to component for UI handling
@@ -133,67 +181,96 @@ export class PrayerTimesService {
   /**
    * Fetch times based on GPS Coordinates
    */
-  async getTimesByGPS(lat: number, lng: number, tzOffset: number) {
+  async getTimesByGPS(lat: number, lng: number): Promise<void> {
     this.state.update(s => ({ ...s, loading: true, error: null }));
-    
-    const url = `${API_CONFIG.baseUrl}/timesForGPS?lat=${lat}&lng=${lng}&timezoneOffset=${tzOffset}&lang=tr`;
 
-    this.http.get<any>(url).pipe(
-      map(response => {
-        const normalized = this.normalizeData(response);
-        // API usually returns the city name inside the response, or we use "Konum"
-        const cityName = response.place?.city || response.place?.name || 'Konum'; 
-        return { times: normalized, city: cityName };
-      }),
-      tap(data => {
-        this.updateState(data.city, data.times, 'gps');
-        this.saveToCache(data.city, data.times, 'gps');
-      }),
-      catchError(err => {
-        this.handleError(err);
-        return of(null);
-      })
-    ).subscribe();
+    try {
+      const geoInfo = await this.resolveGeoInfoByCoords(lat, lng);
+      const config = this.getCalculationConfig(geoInfo.countryCode, lat, lng);
+      const times = await this.fetchTimesByCoords(lat, lng, config);
+
+      if (!times.length) {
+        throw new Error('Prayer times could not be parsed for GPS location');
+      }
+
+      this.updateState(geoInfo.cityName, times, 'gps');
+      this.saveToCache(geoInfo.cityName, times, 'gps');
+    } catch (err) {
+      this.handleError(err);
+      throw err;
+    }
   }
 
   /**
    * Fetch times based on City Name (Search -> ID -> Times)
    */
-  getTimesByCity(city: string) {
+  async getTimesByCity(city: string): Promise<void> {
     this.state.update(s => ({ ...s, loading: true, city: city, error: null }));
-    const tzOffset = this.getClientTimezoneOffset();
 
-    // 1. Search for Place ID
-    this.searchCity(city).pipe(
-      switchMap(placeId => {
-        if (!placeId) throw new Error('City not found');
-        // 2. Get Times for Place
-        const url = `${API_CONFIG.baseUrl}/timesForPlace?id=${placeId}&timezoneOffset=${tzOffset}&lang=tr&type=json`;
-        return this.http.get<any>(url);
-      }),
-      map(apiResponse => this.normalizeData(apiResponse)),
-      tap(normalizedData => {
-        this.updateState(city, normalizedData, 'city');
-        this.saveToCache(city, normalizedData, 'city');
-      }),
-      catchError(err => {
-        this.handleError(err);
-        // Fallback to Mock
-        this.updateState(city, this.getMockData(), 'city');
-        return of(null);
-      })
-    ).subscribe();
+    try {
+      const place = await firstValueFrom(this.searchCity(city));
+      if (!place) {
+        throw new Error('City not found');
+      }
+
+      const config = this.getCalculationConfig(place.countryCode, place.lat, place.lng);
+      const normalizedData = await this.fetchTimesByCoords(place.lat, place.lng, config);
+
+      if (!normalizedData.length) {
+        throw new Error('Prayer times could not be parsed for city');
+      }
+
+      this.updateState(place.name, normalizedData, 'city');
+      this.saveToCache(place.name, normalizedData, 'city');
+    } catch (err) {
+      this.handleError(err);
+      if (city !== API_CONFIG.defaultCity) {
+        await this.getTimesByDefaultCity();
+        return;
+      }
+      // Last-resort fallback to mock
+      this.updateState(API_CONFIG.defaultCity, this.getMockData(), 'city');
+    }
   }
 
-  private searchCity(city: string): Observable<string | null> {
-    // Default search lat/lng to Turkey center to help the search algorithm
-    const url = `${API_CONFIG.baseUrl}/searchPlaces?q=${city}&lat=${API_CONFIG.defaultLat}&lng=${API_CONFIG.defaultLng}&lang=tr`;
-    return this.http.get<any[]>(url).pipe(
-      map(results => {
-        if (results && results.length > 0) {
-          return results[0].id;
+  private async getTimesByDefaultCity(): Promise<void> {
+    this.state.update(s => ({ ...s, loading: true, city: API_CONFIG.defaultCity, error: null }));
+
+    try {
+      const times = await this.fetchTimesByCoords(
+        API_CONFIG.defaultLat,
+        API_CONFIG.defaultLng,
+        {
+          methodId: this.diyanetMethodId,
+          school: 0,
+          applyTurkeyTakvimAdjustments: true
         }
-        return null;
+      );
+      if (!times.length) {
+        throw new Error('Prayer times could not be parsed for default city');
+      }
+
+      this.updateState(API_CONFIG.defaultCity, times, 'city');
+      this.saveToCache(API_CONFIG.defaultCity, times, 'city');
+    } catch (err) {
+      this.handleError(err);
+      this.updateState(API_CONFIG.defaultCity, this.getMockData(), 'city');
+    }
+  }
+
+  private searchCity(city: string): Observable<GeoPlace | null> {
+    const url = `${API_CONFIG.geoBaseUrl}/search?name=${encodeURIComponent(city)}&count=1&language=tr&format=json`;
+    return this.http.get<OpenMeteoSearchResponse>(url).pipe(
+      map(response => {
+        const first = response.results?.[0];
+        if (!first) return null;
+        return {
+          name: first.name,
+          country: first.country,
+          countryCode: first.country_code,
+          lat: first.latitude,
+          lng: first.longitude
+        };
       }),
       catchError(() => of(null))
     );
@@ -201,53 +278,155 @@ export class PrayerTimesService {
 
   // --- Helpers ---
 
-  private getClientTimezoneOffset(): number {
-    // Javascript getTimezoneOffset returns minutes BEHIND UTC.
-    // e.g., UTC+3 returns -180.
-    // The API expects positive for East. So we multiply by -1.
-    return -1 * new Date().getTimezoneOffset();
+  private buildTimingsUrl(lat: number, lng: number, config: CalculationConfig): string {
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yyyy = now.getFullYear();
+    return `${API_CONFIG.baseUrl}/timings/${dd}-${mm}-${yyyy}?latitude=${lat}&longitude=${lng}&method=${config.methodId}&school=${config.school}`;
   }
 
-  private getCurrentPosition(): Promise<GeolocationPosition> {
-    return new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 300000 // 5 minutes
-      });
-    });
+  private async fetchTimesByCoords(lat: number, lng: number, config: CalculationConfig): Promise<PrayerTime[]> {
+    const url = this.buildTimingsUrl(lat, lng, config);
+    const response = await firstValueFrom(this.http.get<AladhanApiResponse>(url));
+    return this.normalizeData(response, config);
   }
 
-  private normalizeData(apiResponse: any): PrayerTime[] {
-    if (!apiResponse || !apiResponse.times) return [];
-
-    // The API keys are dates in YYYY-MM-DD format.
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    const dateKey = `${yyyy}-${mm}-${dd}`;
-
-    const timesArray = apiResponse.times[dateKey];
-
-    if (!timesArray || !Array.isArray(timesArray)) {
-       // Try to find any key if exact date match fails (timezone edge cases)
-       const keys = Object.keys(apiResponse.times);
-       if(keys.length > 0) {
-         return this.mapTimes(apiResponse.times[keys[0]]);
-       }
-       return [];
+  private async resolveGeoInfoByCoords(
+    lat: number,
+    lng: number
+  ): Promise<{ cityName: string; countryCode?: string }> {
+    const url = `${API_CONFIG.reverseGeoBaseUrl}?latitude=${lat}&longitude=${lng}&localityLanguage=tr`;
+    try {
+      const response = await firstValueFrom(this.http.get<ReverseGeocodeResponse>(url));
+      return {
+        cityName: response.city || response.locality || response.principalSubdivision || 'Konum',
+        countryCode: response.countryCode
+      };
+    } catch {
+      return { cityName: 'Konum' };
     }
-    
-    return this.mapTimes(timesArray);
   }
 
-  private mapTimes(timesArray: string[]): PrayerTime[] {
-    const names = ['İmsak', 'Güneş', 'Öğle', 'İkindi', 'Akşam', 'Yatsı'];
-    return timesArray.map((timeStr: string, index: number) => ({
-      vakit: names[index] || 'Bilinmiyor',
-      saat: timeStr
-    }));
+  private getCalculationConfig(countryCode?: string, lat?: number, lng?: number): CalculationConfig {
+    if (countryCode?.toUpperCase() === 'TR') {
+      return {
+        methodId: this.diyanetMethodId,
+        school: 0,
+        applyTurkeyTakvimAdjustments: true
+      };
+    }
+
+    // Fallback when country code is missing from reverse-geocoding response.
+    if (typeof lat === 'number' && typeof lng === 'number' && this.isLikelyTurkey(lat, lng)) {
+      return {
+        methodId: this.diyanetMethodId,
+        school: 0,
+        applyTurkeyTakvimAdjustments: true
+      };
+    }
+
+    return {
+      methodId: this.muslimWorldLeagueMethodId,
+      school: 1,
+      applyTurkeyTakvimAdjustments: false
+    };
+  }
+
+  private isLikelyTurkey(lat: number, lng: number): boolean {
+    return lat >= 35 && lat <= 43 && lng >= 25 && lng <= 45;
+  }
+
+  private async getCurrentPosition(): Promise<GeolocationPosition> {
+    const requestPosition = (options: PositionOptions) =>
+      new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, options);
+      });
+
+    try {
+      // First try: precise but can timeout on desktop/Wi-Fi only environments.
+      return await requestPosition({
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0
+      });
+    } catch (error) {
+      const geoCode = this.getGeoErrorCode(error);
+      if (geoCode === 2 || geoCode === 3) {
+        // Retry with relaxed settings for better compatibility.
+        return requestPosition({
+          enableHighAccuracy: false,
+          timeout: 20000,
+          maximumAge: 600000
+        });
+      }
+      throw error;
+    }
+  }
+
+  private getGeoErrorCode(error: unknown): number | null {
+    if (typeof error === 'object' && error !== null && 'code' in error) {
+      const maybeCode = Number((error as { code: unknown }).code);
+      return Number.isFinite(maybeCode) ? maybeCode : null;
+    }
+    return null;
+  }
+
+  private normalizeData(apiResponse: AladhanApiResponse, config: CalculationConfig): PrayerTime[] {
+    const timings = apiResponse?.data?.timings;
+    if (!timings) return [];
+
+    const toHourMinute = (value?: string): string => {
+      if (!value) return '--:--';
+      const match = value.match(/\d{1,2}:\d{2}/);
+      return match ? match[0] : value;
+    };
+
+    const applyOffset = (value: string, offsetMinutes: number): string => {
+      if (value === '--:--' || offsetMinutes === 0) return value;
+      const [h, m] = value.split(':').map(Number);
+      if (!Number.isFinite(h) || !Number.isFinite(m)) return value;
+      let total = h * 60 + m + offsetMinutes;
+      total = ((total % 1440) + 1440) % 1440;
+      const hh = String(Math.floor(total / 60)).padStart(2, '0');
+      const mm = String(total % 60).padStart(2, '0');
+      return `${hh}:${mm}`;
+    };
+
+    const fajr = toHourMinute(timings['Fajr'] || timings['Imsak']);
+    const sunriseBase = toHourMinute(timings['Sunrise']);
+    const dhuhrBase = toHourMinute(timings['Dhuhr']);
+    const asrBase = toHourMinute(timings['Asr']);
+    const maghribBase = toHourMinute(timings['Maghrib']);
+    const ishaBase = toHourMinute(timings['Isha']);
+
+    const sunrise = config.applyTurkeyTakvimAdjustments
+      ? applyOffset(sunriseBase, this.turkeyTakvimAdjustments.sunrise)
+      : sunriseBase;
+    const dhuhr = config.applyTurkeyTakvimAdjustments
+      ? applyOffset(dhuhrBase, this.turkeyTakvimAdjustments.dhuhr)
+      : dhuhrBase;
+    const asr = config.applyTurkeyTakvimAdjustments
+      ? applyOffset(asrBase, this.turkeyTakvimAdjustments.asr)
+      : asrBase;
+    const maghrib = config.applyTurkeyTakvimAdjustments
+      ? applyOffset(maghribBase, this.turkeyTakvimAdjustments.maghrib)
+      : maghribBase;
+    const isha = config.applyTurkeyTakvimAdjustments
+      ? applyOffset(ishaBase, this.turkeyTakvimAdjustments.isha)
+      : ishaBase;
+
+    const mapped: PrayerTime[] = [
+      { vakit: 'İmsak', saat: fajr },
+      { vakit: 'Güneş', saat: sunrise },
+      { vakit: 'Öğle', saat: dhuhr },
+      { vakit: 'İkindi', saat: asr },
+      { vakit: 'Akşam', saat: maghrib },
+      { vakit: 'Yatsı', saat: isha }
+    ];
+
+    const hasMissing = mapped.some(item => item.saat === '--:--');
+    return hasMissing ? [] : mapped;
   }
 
   private updateState(city: string, times: PrayerTime[], source: PrayerSource) {
@@ -290,13 +469,13 @@ export class PrayerTimesService {
       source,
       timestamp: Date.now()
     };
-    localStorage.setItem('prayer_cache', JSON.stringify(data));
+    localStorage.setItem(this.cacheKey, JSON.stringify(data));
   }
 
   private loadFromCache(): boolean {
     if (typeof localStorage === 'undefined') return false;
 
-    const cached = localStorage.getItem('prayer_cache');
+    const cached = localStorage.getItem(this.cacheKey);
     if (!cached) return false;
 
     try {

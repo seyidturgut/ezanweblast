@@ -205,16 +205,26 @@ export class HeroComponent {
   refreshLocation() {
     if (confirm(this.ts.t().hero.location_request_msg)) {
       this.prayerService.requestLocationAccess().then(() => {
-        // Success
+        alert(this.ts.t().hero.location_updated);
       }).catch((error) => {
-        // Permission denied or other error
-        if (error instanceof GeolocationPositionError && error.code === error.PERMISSION_DENIED) {
+        const geoCode = this.getGeoErrorCode(error);
+        if (geoCode === 1) {
           alert(this.ts.t().hero.location_denied);
+        } else if (geoCode === 2 || geoCode === 3) {
+          alert('Konum şu an alınamadı. Lütfen GPS/Wi-Fi açıkken tekrar deneyin.');
         } else {
           console.error(error);
         }
       });
     }
+  }
+
+  private getGeoErrorCode(error: unknown): number | null {
+    if (typeof error === 'object' && error !== null && 'code' in error) {
+      const maybeCode = Number((error as { code: unknown }).code);
+      return Number.isFinite(maybeCode) ? maybeCode : null;
+    }
+    return null;
   }
 
   formatRemaining(minutes: number): string {

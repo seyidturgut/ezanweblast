@@ -1,7 +1,11 @@
 
 export const API_CONFIG = {
-  // Vakit Vercel API Base URL (Public API)
-  baseUrl: 'https://vakit.vercel.app/api',
+  // Prayer times provider (AlAdhan API)
+  baseUrl: 'https://api.aladhan.com/v1',
+  // City geocoding provider
+  geoBaseUrl: 'https://geocoding-api.open-meteo.com/v1',
+  // Reverse geocoding provider for GPS -> city name
+  reverseGeoBaseUrl: 'https://api.bigdatacloud.net/data/reverse-geocode-client',
   
   // Store Links
   playStoreUrl: 'https://play.google.com/store/apps/details?id=com.mobilexsoft.ezanvakti&utm_source=emea_Med',
