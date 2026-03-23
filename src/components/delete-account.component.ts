@@ -65,7 +65,7 @@ export class DeleteAccountComponent {
 
     this.loading.set(true);
 
-    const url = 'https://formsubmit.co/ajax/6d02e0664ab402777d1470c5a9f6443a';
+    const url = 'https://formsubmit.co/ajax/support@deen-studios.com';
 
     this.http.post(url, {
       email: this.email(),
@@ -84,7 +84,7 @@ export class DeleteAccountComponent {
         alert(this.ts.t().delete_account.alert_error);
         const subject = encodeURIComponent('Hesap Silme Talebi');
         const body = encodeURIComponent(`E-posta: ${this.email()}\n\nHesabımın silinmesini talep ediyorum.`);
-        window.location.href = `mailto:mobilexsoft@gmail.com?subject=${subject}&body=${body}`;
+        window.location.href = `mailto:support@deen-studios.com?subject=${subject}&body=${body}`;
       }
     });
   }
